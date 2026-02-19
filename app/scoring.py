@@ -16,8 +16,16 @@ def get_finbert_sentiment(ticker):
 def normalize(value, min_val, max_val, invert=False):
     """
     Normalizes a value to 0-100 score based on range.
+    INVERT=True means Lower is Better (e.g. P/E).
+    However, if value < 0 (Negative Earnings), it is usually WORST.
+    So we penalize negatives heavily when invert=True.
     """
     if value is None: return 50
+    
+    # Critical Fix for Negative Ratios (Losses)
+    if invert and value < 0:
+        return 0 # Penalize losses to 0 score
+        
     score = (value - min_val) / (max_val - min_val) * 100
     score = max(0, min(100, score))
     return 100 - score if invert else score
@@ -69,14 +77,35 @@ def calculate_scores(ticker):
     # helper to calculated percentile
     def get_percentile(metric_key, target_val, invert=True):
         if not peers_data or target_val is None: return 50
-        values = [p[metric_key] for p in peers_data if p[metric_key] is not None]
+        
+        # --- Negative Value Penalty Logic ---
+        # If invert=True (Lower is Better e.g., P/E), a negative value (Loss) is WORST.
+        # We must penalize it so it ranks as "High" (Bad).
+        
+        def penalize(x):
+            if x is None: return None
+            if invert and x < 0: return 1000000 # Massive penalty for negative P/E, PEG, etc.
+            return x
+
+        # Apply penalty to constraints
+        target_val_adj = penalize(target_val)
+        
+        values = []
+        for p in peers_data:
+            val = p.get(metric_key)
+            if val is not None:
+                values.append(penalize(val))
+                
         if not values: return 50
-        # Add target to distribution if not implicitly there (peers func excludes target)
-        values.append(target_val)
-        # Calculate rank
-        # avg = average rank (handles ties). 
-        # kind='weak' means % of values <= target.
-        pct = percentileofscore(values, target_val, kind='weak')
+        
+        # Add target to distribution if not implicitly there
+        values.append(target_val_adj)
+        
+        # Calculate rank on ADJUSTED values
+        # Now -440 becomes 1,000,000 (Worst), so it gets high percentile.
+        pct = percentileofscore(values, target_val_adj, kind='weak')
+        
+        # Invert: 100 - 100 (Worst) = 0 Score. Correct.
         return 100 - pct if invert else pct
 
     # --- Tier 1: Valuation (Weight: 10) ---
@@ -91,6 +120,15 @@ def calculate_scores(ticker):
     scores_t1 = []
     
     # 1. PEG Ratio (Growth Adjusted Valuation) - CRITICAL for Tech
+    # Fallback Calculation: P/E / (Earnings Growth * 100)
+    if not peg_ratio and pe_ratio and get('earningsGrowth'):
+        try:
+            growth = get('earningsGrowth')
+            if growth > 0:
+                peg_ratio = pe_ratio / (growth * 100)
+        except:
+            pass
+
     if peg_ratio and isinstance(peg_ratio, (int, float)):
         scores_t1.append(normalize(peg_ratio, 1.0, 3.0, invert=True))
         

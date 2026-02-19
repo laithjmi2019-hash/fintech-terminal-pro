@@ -54,6 +54,27 @@ def get_peer_raw(ticker, sector):
             # We need PEG for ranking.
             peg = info.get('pegRatio')
             
+            # Robust Fallback Logic if PEG is missing
+            if peg is None and pe is not None:
+                # Priority 1: Market Standard (PEG = P/E / Earnings Growth)
+                g_earn = info.get('earningsGrowth')
+                if g_earn and g_earn > 0:
+                    peg = pe / (g_earn * 100)
+                else:
+                    # Priority 2: Revenue Growth (Reliable for high growth / unprofitable tech)
+                    g_rev = info.get('revenueGrowth')
+                    if g_rev and g_rev > 0:
+                        peg = pe / (g_rev * 100)
+                    else:
+                        # Priority 3: Ultimate Fallback (Sustainable Growth Rate)
+                        # g = ROE * (1 - PayoutRatio)
+                        roe = info.get('returnOnEquity')
+                        payout = info.get('payoutRatio') or 0.0 # Assume 0 if missing
+                        if roe and roe > 0:
+                            g_sgr = roe * (1 - payout)
+                            if g_sgr > 0.01: # Avoid division by zero
+                                peg = pe / (g_sgr * 100)
+            
             # 4. ROE (No fallback usually, maybe ROA? Stick to ROE)
             roe = info.get('returnOnEquity')
             
@@ -103,9 +124,25 @@ def get_peer_comparison(ticker, sector):
     # --- Multi-Factor Ranking Logic ---
     
     # 1. Value Score (40%) - Lower is Better
-    # Rank 1 = Lowest P/E. 
-    rank_pe = df['P/E'].rank(ascending=True)
-    rank_ev = df['EV/EBITDA'].rank(ascending=True)
+    # Rank 1 = Lowest P/E (BUT negative P/E means loss, so it should be ranked worst)
+    # Strategy: Replace negative values with a High Number (Penalty) before ranking
+    
+    # Create temp columns for ranking with robust penalty logic
+    # Rule: Negative Valuation Ratios (P/E, EV/EBITDA, PEG) usually imply losses.
+    # We want to rank these as "Worst" (High Rank Number).
+    # Normal Positive Ratios: Lower is Better.
+    
+    def penalize_negatives(x):
+        if pd.isnull(x): return 1000 # Treat missing as bad (or use mean if preferred, but penalty is safer for ranking)
+        if x < 0: return 1000 # Penalize negative values (Losses)
+        return x
+
+    df['PE_RankValue'] = df['P/E'].apply(penalize_negatives)
+    df['EV_RankValue'] = df['EV/EBITDA'].apply(penalize_negatives)
+    
+    rank_pe = df['PE_RankValue'].rank(ascending=True)
+    rank_ev = df['EV_RankValue'].rank(ascending=True)
+    
     # Average the ranks
     score_value = (rank_pe + rank_ev) / 2
     
@@ -117,7 +154,10 @@ def get_peer_comparison(ticker, sector):
     
     # 3. Growth Score (20%) - Lower PEG is "Better" value-growth? 
     # Usually PEG < 1 is good. Lower is better for valuation.
-    rank_peg = df['PEG'].rank(ascending=True)
+    # Penalize negative PEG (losses or negative growth)
+    df['PEG_RankValue'] = df['PEG'].apply(penalize_negatives)
+    
+    rank_peg = df['PEG_RankValue'].rank(ascending=True)
     score_growth = rank_peg
     
     # Composite Score (Weighted Sum of Ranks)
@@ -146,7 +186,8 @@ def get_peer_comparison(ticker, sector):
     # Select Columns for Display
     # Adding PEG and ROE to show the 'Why'
     cols = ["🏆 Rank", "Ticker", "Price", "P/E", "EV/EBITDA", "Margins", "ROE", "PEG", "Mkt Cap"]
-    return display_df[cols]
+    final_df = display_df[cols].rename(columns={"PEG": "PEG (v5)"})
+    return final_df
 
 def format_market_cap(val):
     if not val: return "N/A"

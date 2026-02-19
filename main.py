@@ -51,7 +51,6 @@ with st.sidebar:
 
 # --- Layout ---
 
-# 1. Macro Header
 # 1. Macro Header & Market Regime
 render_macro_header()
 
@@ -345,7 +344,7 @@ else:
                     st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.warning(fig) 
-
+            
             # Paywall Overlay
             if user_tier != 'Pro':
                  st.markdown('''
@@ -356,5 +355,3 @@ else:
                    </div>
                  </div>
                  ''', unsafe_allow_html=True)
-
-
