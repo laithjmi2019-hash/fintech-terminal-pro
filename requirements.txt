@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+scipy
+yfinance
+plotly
+fpdf
+requests
+supabase
+transformers
+torch
+feedparser

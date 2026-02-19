@@ -1,0 +1,22 @@
+/* Main Background - Bloomberg Dark */
+.stApp {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* Hide Streamlit Branding */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Custom Font (Simulated) */
+body {
+    font-family: "Roboto Mono", monospace;
+}
+
+/* Input Fields */
+.stTextInput > div > div > input {
+    background-color: #1e1e1e;
+    color: #ff9900; /* Amber text for terminal feel */
+    border: 1px solid #333;
+}
