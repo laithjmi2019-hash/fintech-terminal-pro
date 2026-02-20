@@ -22,6 +22,12 @@ def normalize(value, min_val, max_val, invert=False):
     """
     if value is None: return 50
     
+    if isinstance(value, str):
+        try:
+            value = float(value.replace('%', '').replace(',', ''))
+        except ValueError:
+            return 50
+            
     # Critical Fix for Negative Ratios (Losses)
     if invert and value < 0:
         return 0 # Penalize losses to 0 score
@@ -44,7 +50,13 @@ def calculate_scores(ticker):
 
     # Helper for safe access
     def get(key, default=None):
-        return info.get(key, default)
+        val = info.get(key, default)
+        if isinstance(val, str) and key not in ['sector', 'longName', 'symbol', 'industry', 'shortName']:
+            try:
+                return float(val.replace(',', '').replace('%', ''))
+            except ValueError:
+                pass
+        return val
 
     scores = {}
     weights = {}
@@ -84,17 +96,24 @@ def calculate_scores(ticker):
         
         def penalize(x):
             if x is None: return None
+            if isinstance(x, str):
+                try:
+                    x = float(x.replace('%', '').replace(',', ''))
+                except ValueError:
+                    return None
             if invert and x < 0: return 1000000 # Massive penalty for negative P/E, PEG, etc.
             return x
 
         # Apply penalty to constraints
         target_val_adj = penalize(target_val)
+        if target_val_adj is None: return 50
         
         values = []
         for p in peers_data:
             val = p.get(metric_key)
-            if val is not None:
-                values.append(penalize(val))
+            p_val = penalize(val)
+            if p_val is not None:
+                values.append(p_val)
                 
         if not values: return 50
         
@@ -166,7 +185,7 @@ def calculate_scores(ticker):
     scores_t2 = []
     
     # 1. Analyst Upside
-    if target and current > 0:
+    if target and isinstance(target, (int, float)) and current > 0:
         upside = (target - current) / current
         scores_t2.append(normalize(upside, 0, 0.40))
         
@@ -278,7 +297,7 @@ def calculate_scores(ticker):
     scores_t8 = []
     
     # 1. Volume Flow
-    if vol and avg_vol and avg_vol > 0:
+    if vol and avg_vol and isinstance(avg_vol, (int, float)) and isinstance(vol, (int, float)) and avg_vol > 0:
         rel_vol = vol / avg_vol
         scores_t8.append(normalize(rel_vol, 0.5, 1.5))
     
