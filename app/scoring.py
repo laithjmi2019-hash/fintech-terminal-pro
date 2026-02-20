@@ -143,7 +143,7 @@ def calculate_scores(ticker):
     if not peg_ratio and pe_ratio and get('earningsGrowth'):
         try:
             growth = get('earningsGrowth')
-            if growth > 0:
+            if isinstance(pe_ratio, (int, float)) and isinstance(growth, (int, float)) and growth > 0:
                 peg_ratio = pe_ratio / (growth * 100)
         except:
             pass
