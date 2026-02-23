@@ -49,10 +49,31 @@ with st.sidebar:
     st.divider()
     st.info("Market data provided by Yahoo Finance & FinBERT AI.")
 
-# --- Layout ---
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_macro_regime():
+    try:
+        url: str = st.secrets["supabase"]["url"]
+        key: str = st.secrets["supabase"]["key"]
+        from supabase import create_client
+        supabase = create_client(url, key)
+        res = supabase.table('macro_regime').select('*').limit(1).execute()
+        if res.data: return res.data[0]
+    except Exception:
+        pass
+    return None
 
 # 1. Macro Header & Market Regime
 render_macro_header()
+
+regime_data = get_macro_regime()
+if regime_data:
+    regime = regime_data.get('regime_label', 'Unknown')
+    st.markdown(f'''
+    <div style="background: linear-gradient(90deg, #1E2129 0%, #003319 100%); padding: 12px; border-radius: 8px; border-left: 4px solid #00FF7F; margin-bottom: 20px;">
+        <h4 style="margin:0; color:#00FF7F;">🌐 Current Institutional Macro Regime: <strong>{regime}</strong></h4>
+        <span style="color:#A0AEC0; font-size: 0.9rem;">SPY Trend: {regime_data.get('spy_trend')} | TLT Trend: {regime_data.get('tlt_trend')} | VIX: {regime_data.get('vix_level')}</span>
+    </div>
+    ''', unsafe_allow_html=True)
 
 from app.insights import get_global_pulse, generate_tier_insight
 
@@ -141,7 +162,7 @@ else:
             company_name = scores.get('company_name', ticker)
         
         # --- Hero Section ---
-        hero_c1, hero_c2, hero_c3 = st.columns([1, 1, 1])
+        hero_c1, hero_c2, hero_c3, hero_c4, hero_c5 = st.columns([1.5, 1, 1, 1, 1])
         
         with hero_c1:
             st.markdown(f"## {ticker}")
@@ -156,10 +177,31 @@ else:
             st.caption("Current Price")
             
         with hero_c3:
+            dcf = scores.get('dcf_fair_value')
+            if dcf:
+                 st.markdown(f"## ${dcf:,.2f}")
+                 dcf_upside = scores.get('dcf_upside_pct', 0)
+                 color = "#00FF7F" if dcf_upside > 0 else "#FF4560"
+                 st.markdown(f"<span style='color:{color}; font-size:0.85rem;'>({dcf_upside}%)</span>", unsafe_allow_html=True)
+            else:
+                 st.markdown("## $--")
+                 st.caption("N/A")
+            st.caption("DCF Fair Value")
+            
+        with hero_c4:
+            piotroski = scores.get('piotroski_score')
+            if piotroski is not None:
+                 p_color = "#00FF7F" if piotroski >= 7 else "#FFB020" if piotroski >= 4 else "#FF4560"
+                 st.markdown(f"## <span style='color:{p_color};'>{piotroski}/9</span>", unsafe_allow_html=True)
+            else:
+                 st.markdown("## --")
+            st.caption("Piotroski F-Score")
+            
+        with hero_c5:
             final_score = scores.get("final_score", 0)
             score_class = "score-high" if final_score >= 80 else "score-med" if final_score >= 50 else "score-low"
             st.markdown(f"## <span class='{score_class}'>{final_score}/100</span>", unsafe_allow_html=True)
-            st.caption(f"Institutional Grade: {scores.get('final_grade')}")
+            st.caption(f"Composite: {scores.get('final_grade')}")
 
         st.divider()
         

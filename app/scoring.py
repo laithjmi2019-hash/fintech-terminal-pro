@@ -49,9 +49,12 @@ def calculate_scores(ticker, live=False):
             key: str = st.secrets["supabase"]["key"]
             from supabase import create_client
             supabase = create_client(url, key)
-            res = supabase.table('quant_metrics').select('tier_matrix').eq('ticker', ticker).execute()
+            res = supabase.table('quant_metrics').select('*').eq('ticker', ticker).execute()
             if res.data and 'tier_matrix' in res.data[0] and res.data[0]['tier_matrix']:
-                return res.data[0]['tier_matrix']
+                payload = res.data[0]['tier_matrix']
+                payload['dcf_fair_value'] = res.data[0].get('dcf_fair_value')
+                payload['piotroski_score'] = res.data[0].get('piotroski_score')
+                return payload
         except Exception:
             pass # Silently fallback to live calculation if not in database
             
