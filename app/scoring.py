@@ -43,6 +43,7 @@ def calculate_scores(ticker, live=False):
     """
     Calculates the 12-Tier Matrix Score with Institutional Weightings & Sector Adjustments.
     """
+    # Cache invalidation trigger - V2
     if not live:
         try:
             url: str = st.secrets["supabase"]["url"]

@@ -109,6 +109,7 @@ def get_peer_comparison(ticker, sector, live=False):
     - Efficiency (40%): Margins + ROE
     - Growth (20%): PEG
     """
+    # Cache invalidation trigger - V2
     if not live:
         try:
             url: str = st.secrets["supabase"]["url"]
