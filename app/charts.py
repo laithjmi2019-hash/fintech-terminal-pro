@@ -77,10 +77,39 @@ def render_chart(ticker):
                 title=f"{ticker} - Daily Chart",
                 yaxis_title="Price",
                 xaxis_title="Date",
-                margin=dict(l=0, r=0, t=30, b=0)
+                margin=dict(l=0, r=0, t=30, b=0),
+                hovermode="x unified",
+                hoverdistance=-1,
+                spikedistance=-1
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            # Add crosshairs for exact cursor position
+            fig.update_xaxes(
+                showspikes=True,
+                spikemode="across",
+                spikesnap="cursor",
+                showline=True,
+                spikedash="dash",
+                spikecolor="gray",
+                spikethickness=1
+            )
+            fig.update_yaxes(
+                showspikes=True,
+                spikemode="across",
+                spikesnap="cursor",
+                showline=True,
+                spikedash="dash",
+                spikecolor="gray",
+                spikethickness=1,
+                secondary_y=False
+            )
+
+            config = {
+                'displayModeBar': True,
+                'scrollZoom': True,
+                'modeBarButtonsToAdd': ['crosshair']
+            }
+            st.plotly_chart(fig, use_container_width=True, config=config)
             
         except Exception as e:
             st.error(f"Error rendering chart: {e}")
