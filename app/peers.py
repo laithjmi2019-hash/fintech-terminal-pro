@@ -101,7 +101,7 @@ def get_peer_raw(ticker, sector):
             
     return data
 
-def get_peer_comparison(ticker, sector):
+def get_peer_comparison(ticker, sector, live=False):
     """
     Fetches peer data, ranks them by Multi-Factor Composite Score, and returns formatted DF.
     Ranking Weights:
@@ -109,6 +109,19 @@ def get_peer_comparison(ticker, sector):
     - Efficiency (40%): Margins + ROE
     - Growth (20%): PEG
     """
+    if not live:
+        try:
+            url: str = st.secrets["supabase"]["url"]
+            key: str = st.secrets["supabase"]["key"]
+            from supabase import create_client
+            supabase = create_client(url, key)
+            res = supabase.table('quant_metrics').select('peer_comparison').eq('ticker', ticker).execute()
+            if res.data and 'peer_comparison' in res.data[0] and res.data[0]['peer_comparison']:
+                import pandas as pd
+                return pd.DataFrame(res.data[0]['peer_comparison'])
+        except Exception:
+            pass # Silently fallback to live calculation if not in database
+            
     raw_data = get_peer_raw(ticker, sector)
     if not raw_data: return pd.DataFrame()
     

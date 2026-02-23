@@ -39,10 +39,22 @@ def normalize(value, min_val, max_val, invert=False):
     return 100 - score if invert else score
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def calculate_scores(ticker):
+def calculate_scores(ticker, live=False):
     """
     Calculates the 12-Tier Matrix Score with Institutional Weightings & Sector Adjustments.
     """
+    if not live:
+        try:
+            url: str = st.secrets["supabase"]["url"]
+            key: str = st.secrets["supabase"]["key"]
+            from supabase import create_client
+            supabase = create_client(url, key)
+            res = supabase.table('quant_metrics').select('tier_matrix').eq('ticker', ticker).execute()
+            if res.data and 'tier_matrix' in res.data[0] and res.data[0]['tier_matrix']:
+                return res.data[0]['tier_matrix']
+        except Exception:
+            pass # Silently fallback to live calculation if not in database
+            
     stock = yfu.get_ticker(ticker)
     try:
         info = stock.info
