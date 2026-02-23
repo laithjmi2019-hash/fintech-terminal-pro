@@ -117,7 +117,6 @@ def get_peer_comparison(ticker, sector, live=False):
             supabase = create_client(url, key)
             res = supabase.table('quant_metrics').select('peer_comparison').eq('ticker', ticker).execute()
             if res.data and 'peer_comparison' in res.data[0] and res.data[0]['peer_comparison']:
-                import pandas as pd
                 return pd.DataFrame(res.data[0]['peer_comparison'])
         except Exception:
             pass # Silently fallback to live calculation if not in database
