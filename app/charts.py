@@ -35,6 +35,20 @@ def render_chart(ticker):
             from plotly.subplots import make_subplots
             fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+            # Invisible trace for reliable unified hover tracking
+            import numpy as np
+            custom_data = np.stack((df['Open'], df['High'], df['Low'], df['Close']), axis=-1)
+            fig.add_trace(go.Scatter(
+                x=df.index,
+                y=df['Close'],
+                mode='lines',
+                line=dict(color='rgba(0,0,0,0)'),
+                showlegend=False,
+                name='Price',
+                customdata=custom_data,
+                hovertemplate="Open: %{customdata[0]:.2f}<br>High: %{customdata[1]:.2f}<br>Low: %{customdata[2]:.2f}<br>Close: %{customdata[3]:.2f}<extra></extra>"
+            ), secondary_y=False)
+
             # Candlestick
             fig.add_trace(go.Candlestick(
                 x=df.index,
@@ -42,7 +56,8 @@ def render_chart(ticker):
                 high=df['High'],
                 low=df['Low'],
                 close=df['Close'],
-                name='Price'
+                name='Price',
+                hoverinfo='skip'
             ), secondary_y=False)
 
             # SMA 50
