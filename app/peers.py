@@ -45,9 +45,9 @@ def get_peer_raw(ticker, sector):
             
             # --- Data Resiliency & Fallbacks ---
             
-            # 1. P/E Fallback: Fwd -> Trailing
-            pe = info.get('forwardPE')
-            if pe is None: pe = info.get('trailingPE')
+            # 1. P/E Fallback: Trailing -> Fwd (Trailing is more stable than forward estimates)
+            pe = info.get('trailingPE')
+            if pe is None: pe = info.get('forwardPE')
             
             # 2. Margins Fallback: Operating -> Profit
             margins = info.get('operatingMargins')
