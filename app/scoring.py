@@ -54,6 +54,7 @@ def calculate_scores(ticker, live=False):
             if res.data and 'tier_matrix' in res.data[0] and res.data[0]['tier_matrix']:
                 payload = res.data[0]['tier_matrix']
                 payload['dcf_fair_value'] = res.data[0].get('dcf_fair_value')
+                payload['dcf_upside_pct'] = res.data[0].get('dcf_upside_pct')
                 payload['piotroski_score'] = res.data[0].get('piotroski_score')
                 return payload
         except Exception:
