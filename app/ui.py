@@ -1,5 +1,7 @@
 import streamlit as st
+import time
 import yfinance as yf
+import app.yf_utils as yfu
 import pandas as pd
 
 def inject_paywall_css():
@@ -155,7 +157,7 @@ def render_macro_header():
     # Fetch individually to avoid MultiIndex complexity and partial failures
     for i, (name, symbol) in enumerate(tickers.items()):
         try:
-            ticker_obj = yf.Ticker(symbol)
+            ticker_obj = yfu.get_ticker(symbol)
             # Try history first (most reliable for Close)
             hist = ticker_obj.history(period="5d")
             

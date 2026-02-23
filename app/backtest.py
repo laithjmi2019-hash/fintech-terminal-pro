@@ -1,6 +1,8 @@
 import yfinance as yf
+import yfinance as yf
 import pandas as pd
 import numpy as np
+import app.yf_utils as yfu
 import plotly.graph_objects as go
 
 def calculate_rsi(series, period=14):
@@ -19,7 +21,7 @@ def run_backtest(ticker):
     """
     try:
         # 1. Fetch Data (10 Years)
-        stock = yf.Ticker(ticker)
+        stock = yfu.get_ticker(ticker)
         df = stock.history(period="10y")
         
         if len(df) < 252: # Need at least 1 year

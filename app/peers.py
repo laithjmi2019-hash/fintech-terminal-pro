@@ -1,5 +1,7 @@
 import yfinance as yf
+import app.yf_utils as yfu
 import pandas as pd
+import streamlit as st
 
 # Hardcoded Sector Leaders for Comparison
 # Hardcoded Sector Leaders for Comparison (Expanded to 6+)
@@ -25,6 +27,7 @@ def get_peers(ticker, sector):
     peers = [p for p in candidates if p != ticker][:6] # Allow up to 6 peers
     return peers
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def get_peer_raw(ticker, sector):
     """
     Fetches raw key metrics for the ticker and its peers.
@@ -37,7 +40,7 @@ def get_peer_raw(ticker, sector):
     
     for t in all_tickers:
         try:
-            stock = yf.Ticker(t)
+            stock = yfu.get_ticker(t)
             info = stock.info 
             
             # --- Data Resiliency & Fallbacks ---

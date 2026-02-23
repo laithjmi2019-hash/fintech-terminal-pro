@@ -1,6 +1,7 @@
 import plotly.graph_objects as go
 import streamlit as st
 import yfinance as yf
+import app.yf_utils as yfu
 import pandas as pd
 
 # Let's calculate manually to avoid extra dependencies for now if simple.
@@ -16,7 +17,7 @@ def render_chart(ticker):
     with st.spinner(f"Loading Chart for {ticker}..."):
         try:
             # Fetch Data
-            df = yf.download(ticker, period="1y", interval="1d", progress=False)
+            df = yfu.download_data(ticker, period="1y", interval="1d", progress=False)
             
             # Fix for yfinance returning MultiIndex columns (Price, Ticker)
             if isinstance(df.columns, pd.MultiIndex):

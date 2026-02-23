@@ -1,5 +1,9 @@
 import feedparser
+import requests
+from bs4 import BeautifulSoup
 import yfinance as yf
+import app.yf_utils as yfu
+import streamlit as st
 # Load pipeline once (if possible) or load on demand
 try:
     from transformers import pipeline
@@ -32,6 +36,7 @@ def analyze_headlines(headlines):
         
     return int(total_score / len(results))
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def get_consensus_sentiment(ticker):
     """
     Returns weighted average of Yahoo Finance (Direct) and Google News (Aggregated).
@@ -42,7 +47,7 @@ def get_consensus_sentiment(ticker):
     
     # Source 1: Yahoo
     try:
-        y_news = yf.Ticker(ticker).news
+        y_news = yfu.get_ticker(ticker).news
         y_headlines = [i['title'] for i in y_news[:5]] if y_news else []
         s_yahoo = analyze_headlines(y_headlines)
     except:

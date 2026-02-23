@@ -1,6 +1,8 @@
 import yfinance as yf
+import app.yf_utils as yfu
 import pandas as pd
 import numpy as np
+import streamlit as st
 
 # Sentiment Pipeline moved to app/consensus.py to avoid duplication
 
@@ -36,11 +38,12 @@ def normalize(value, min_val, max_val, invert=False):
     score = max(0, min(100, score))
     return 100 - score if invert else score
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def calculate_scores(ticker):
     """
     Calculates the 12-Tier Matrix Score with Institutional Weightings & Sector Adjustments.
     """
-    stock = yf.Ticker(ticker)
+    stock = yfu.get_ticker(ticker)
     try:
         info = stock.info
         history = stock.history(period="1y") 
@@ -398,7 +401,7 @@ def calculate_scores(ticker):
     if not history.empty and len(history) > 60:
         # Download SPY data for comparison (cached/optimized in real app)
         try:
-            spy = yf.Ticker("SPY").history(period="1y")['Close']
+            spy = yfu.get_ticker("SPY").history(period="1y")['Close']
             # Align dates
             aligned_spy = spy.reindex(history.index).ffill()
             

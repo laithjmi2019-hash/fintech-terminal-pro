@@ -1,4 +1,6 @@
+import requests
 import yfinance as yf
+import app.yf_utils as yfu
 import pandas as pd
 import numpy as np
 
@@ -23,7 +25,7 @@ def get_market_regime(ticker=None):
                 market_name = "GOLD"
         
         # 2. Fetch History
-        spy = yf.Ticker(benchmark_symbol).history(period="1y")
+        spy = yfu.get_ticker(benchmark_symbol).history(period="1y")
         if spy.empty:
             return {"status": "Unknown", "color": "gray", "summary": "Market data unavailable.", "market": market_name}
         
@@ -93,7 +95,7 @@ def get_global_pulse():
             ticker = asset['ticker']
             
             # Fetch sufficient history for RSI (14) + SMA (200)
-            t_obj = yf.Ticker(ticker)
+            t_obj = yfu.get_ticker(ticker)
             # We need at least 200 days for SMA200, plus buffer. 1y is safe.
             hist = t_obj.history(period="1y")
             
