@@ -112,17 +112,45 @@ def calculate_z_scores(df_peers):
 
 def run_quant_engine():
     tickers = [
-        'AAPL', 'MSFT', 'NVDA', 'ADBE', 'ORCL', 'CRM', 'AMD',
-        'JPM', 'BAC', 'GS', 'XOM', 'CVX', 'JNJ', 'UNH', 'AMZN', 'TSLA'
+        'AAPL', 'MSFT', 'NVDA', 'ADBE', 'ORCL', 'CRM', 'AMD', 'JPM',
+        'BAC', 'GS', 'XOM', 'CVX', 'JNJ', 'UNH', 'AMZN', 'TSLA',
+        'META', 'GOOGL', 'SAN.PA', 'ABT', 'SAP.DE', 'MELI', 'XIACY', 'PANW',
+        'LNVGY', 'ADS.DE', 'MRVL', 'NOW', 'SNOW', 'NET', 'UBER', 'NOVO-B.CO',
+        'NVO', 'GOOG', 'AVGO', 'REGN', 'BYDDY', 'MRK', 'ANPDY', 'QCOM',
+        'PDD', 'BABA', 'NVTS', 'PNDORA.CO', 'CRWD', 'INTU', 'HIMS', '3750.HK',
+        'INTC', 'NKE', 'EQIX', 'CRCL', 'NOK', 'MU', 'TSM', 'ASML',
+        'BROS', 'SMCI', 'CL', 'PEP', 'PG', 'EBAY', 'ETSY', 'SONY',
+        'MSTR', 'ELF', 'CRSR', 'LOGI', 'ADM', 'HLAG.DE', 'PAYX', 'ALB',
+        'JKS', 'BBY', 'UA', 'GAP', 'BLDR', 'APP', 'APLD', 'CORZ',
+        'OTIS', 'AAP', 'AZO', 'FSLR', 'MKC', 'UPS', 'SHOP', 'TTD',
+        'HUBS', 'TEAM', 'ZS', 'MDB', 'CHD'
     ]
     
     sector_map = {
-        'AAPL': 'Technology', 'MSFT': 'Technology', 'NVDA': 'Technology', 
-        'ADBE': 'Technology', 'ORCL': 'Technology', 'CRM': 'Technology', 'AMD': 'Technology',
-        'JPM': 'Financial Services', 'BAC': 'Financial Services', 'GS': 'Financial Services',
-        'XOM': 'Energy', 'CVX': 'Energy',
-        'JNJ': 'Healthcare', 'UNH': 'Healthcare',
-        'AMZN': 'Consumer Cyclical', 'TSLA': 'Consumer Cyclical'
+        'AAPL': 'Technology', 'MSFT': 'Technology', 'NVDA': 'Technology', 'ADBE': 'Technology',
+        'ORCL': 'Technology', 'CRM': 'Technology', 'AMD': 'Technology', 'JPM': 'Financial Services',
+        'BAC': 'Financial Services', 'GS': 'Financial Services', 'XOM': 'Energy', 'CVX': 'Energy',
+        'JNJ': 'Healthcare', 'UNH': 'Healthcare', 'AMZN': 'Consumer Cyclical', 'TSLA': 'Consumer Cyclical',
+        'META': 'Communication Services', 'GOOGL': 'Communication Services', 'SAN.PA': 'Healthcare', 'ABT': 'Healthcare',
+        'SAP.DE': 'Technology', 'MELI': 'Consumer Cyclical', 'XIACY': 'Technology', 'PANW': 'Technology',
+        'LNVGY': 'Technology', 'ADS.DE': 'Consumer Cyclical', 'MRVL': 'Technology', 'NOW': 'Technology',
+        'SNOW': 'Technology', 'NET': 'Technology', 'UBER': 'Technology', 'NOVO-B.CO': 'Healthcare',
+        'NVO': 'Healthcare', 'GOOG': 'Communication Services', 'AVGO': 'Technology', 'REGN': 'Healthcare',
+        'BYDDY': 'Consumer Cyclical', 'MRK': 'Healthcare', 'ANPDY': 'Consumer Cyclical', 'QCOM': 'Technology',
+        'PDD': 'Consumer Cyclical', 'BABA': 'Consumer Cyclical', 'NVTS': 'Technology', 'PNDORA.CO': 'Consumer Cyclical',
+        'CRWD': 'Technology', 'INTU': 'Technology', 'HIMS': 'Healthcare', '3750.HK': 'Industrials',
+        'INTC': 'Technology', 'NKE': 'Consumer Cyclical', 'EQIX': 'Real Estate', 'CRCL': 'Financial Services',
+        'NOK': 'Technology', 'MU': 'Technology', 'TSM': 'Technology', 'ASML': 'Technology',
+        'BROS': 'Consumer Cyclical', 'SMCI': 'Technology', 'CL': 'Consumer Defensive', 'PEP': 'Consumer Defensive',
+        'PG': 'Consumer Defensive', 'EBAY': 'Consumer Cyclical', 'ETSY': 'Consumer Cyclical', 'SONY': 'Technology',
+        'MSTR': 'Technology', 'ELF': 'Consumer Defensive', 'CRSR': 'Technology', 'LOGI': 'Technology',
+        'ADM': 'Consumer Defensive', 'HLAG.DE': 'Industrials', 'PAYX': 'Technology', 'ALB': 'Basic Materials',
+        'JKS': 'Technology', 'BBY': 'Consumer Cyclical', 'UA': 'Consumer Cyclical', 'GAP': 'Consumer Cyclical',
+        'BLDR': 'Industrials', 'APP': 'Communication Services', 'APLD': 'Technology', 'CORZ': 'Technology',
+        'OTIS': 'Industrials', 'AAP': 'Consumer Cyclical', 'AZO': 'Consumer Cyclical', 'FSLR': 'Technology',
+        'MKC': 'Consumer Defensive', 'UPS': 'Industrials', 'SHOP': 'Technology', 'TTD': 'Communication Services',
+        'HUBS': 'Technology', 'TEAM': 'Technology', 'ZS': 'Technology', 'MDB': 'Technology',
+        'CHD': 'Consumer Defensive'
     }
 
     results = []
@@ -135,14 +163,11 @@ def run_quant_engine():
             current_price = info.get('currentPrice')
             
             # Run existing tiered matrix
-            score_data = calculate_scores(t)
-            
-            # Format breakdown into an array of objects for JSONB storage
-            tiers = [{"tier": k, "score": v} for k, v in score_data.get("breakdown", {}).items()]
+            score_data = calculate_scores(t, live=True)
             
             # Get peer comparison
             sector = sector_map.get(t, 'Technology')
-            peers_df = get_peer_comparison(t, sector)
+            peers_df = get_peer_comparison(t, sector, live=True)
             peers_df = calculate_z_scores(peers_df)
             
             # Compute new Masterclass metrics
@@ -157,7 +182,7 @@ def run_quant_engine():
                 "dcf_upside_pct": dcf_upside,
                 "piotroski_score": piotroski,
                 "z_score_composite": float(peers_df['Margin_Z'].mean()) if 'Margin_Z' in peers_df.columns else 0.0,
-                "tier_matrix": tiers,
+                "tier_matrix": score_data,
                 "peer_comparison": json.loads(peers_df.to_json(orient='records')),
                 "raw_financials": {"pe": info.get('trailingPE'), "mkt_cap": info.get('marketCap')}
             }
