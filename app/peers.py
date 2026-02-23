@@ -49,9 +49,9 @@ def get_peer_raw(ticker, sector):
             pe = info.get('trailingPE')
             if pe is None: pe = info.get('forwardPE')
             
-            # 2. Margins Fallback: Operating -> Profit
-            margins = info.get('operatingMargins')
-            if margins is None: margins = info.get('profitMargins')
+            # 2. Margins Fallback: Profit -> Operating
+            margins = info.get('profitMargins')
+            if margins is None: margins = info.get('operatingMargins')
             
             # 3. Growth / PEG Fallback
             # We need PEG for ranking.
